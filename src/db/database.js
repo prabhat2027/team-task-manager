@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const dbPath = process.env.NODE_ENV === 'production'
-  ? '/app/database.db'
+  ? '/app/data/database.db'
   : 'database.db';
 const db = new Database(dbPath);
 
