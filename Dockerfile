@@ -10,6 +10,8 @@ RUN npm ci
 
 COPY . .
 
+RUN ls -la
+
 EXPOSE 3000
 
 CMD ["node", "server.js"]
