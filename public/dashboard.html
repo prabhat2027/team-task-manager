@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#f1f5f9;display:flex;min-height:100vh}
+    .sidebar{width:230px;background:#1e293b;border-right:1px solid #334155;display:flex;flex-direction:column;padding:24px 16px;position:fixed;height:100vh;overflow-y:auto}
+    .logo{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:8px;padding-left:8px}
+    .role-badge{font-size:11px;padding:3px 10px;border-radius:20px;margin-left:8px;margin-bottom:24px;display:inline-block}
+    .role-hr{background:#1d4ed8;color:#bfdbfe}
+    .role-project_lead{background:#065f46;color:#6ee7b7}
+    .role-quality_lead{background:#92400e;color:#fde68a}
+    .role-intern{background:#3b0764;color:#e9d5ff}
+    .nav-item{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:#94a3b8;margin-bottom:4px;transition:all .15s}
+    .nav-item:hover{background:#334155;color:#f1f5f9}
+    .nav-item.active{background:#1d4ed8;color:white}
+    .sidebar-bottom{margin-top:auto}
+    .user-info{padding:12px;background:#0f172a;border-radius:8px;margin-bottom:8px}
+    .user-name{font-size:13px;font-weight:600}
+    .user-email{font-size:11px;color:#64748b;margin-top:2px}
+    .logout-btn{width:100%;padding:8px;background:transparent;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer}
+    .logout-btn:hover{background:#450a0a;border-color:#dc2626;color:#fca5a5}
+    .main{margin-left:230px;flex:1;padding:32px}
+    .page{display:none}
+    .page.active{display:block}
+    h2{font-size:22px;margin-bottom:24px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:32px}
+    .stat-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px}
+    .stat-label{font-size:12px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+    .stat-value{font-size:32px;font-weight:700}
+    .blue{color:#3b82f6}.green{color:#22c55e}.red{color:#ef4444}.yellow{color:#f59e0b}.purple{color:#a855f7}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+    .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px}
+    .card h3{font-size:16px;margin-bottom:6px}
+    .card p{font-size:13px;color:#64748b;margin-bottom:16px}
+    .card-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .project-code{font-size:11px;color:#3b82f6;font-weight:600;font-family:monospace;background:#1d4ed820;padding:2px 8px;border-radius:4px;margin-bottom:8px;display:inline-block}
+    .btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+    .btn-primary{background:#3b82f6;color:white}
+    .btn-primary:hover{background:#2563eb}
+    .btn-danger{background:transparent;border:1px solid #dc2626;color:#ef4444}
+    .btn-danger:hover{background:#450a0a}
+    .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}
+    .btn-outline:hover{border-color:#3b82f6;color:#3b82f6}
+    .btn-success{background:#16a34a;color:white}
+    .btn-success:hover{background:#15803d}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+    .task-list{display:flex;flex-direction:column;gap:10px}
+    .task-item{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .task-title{flex:1;font-size:14px;font-weight:500;min-width:150px}
+    .task-meta{font-size:12px;color:#64748b}
+    .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;white-space:nowrap}
+    .badge-todo{background:#1e3a5f;color:#60a5fa}
+    .badge-inprogress,.badge-in_progress{background:#451a03;color:#fb923c}
+    .badge-done{background:#052e16;color:#4ade80}
+    .badge-high{background:#450a0a;color:#f87171}
+    .badge-medium{background:#422006;color:#fdba74}
+    .badge-low{background:#052e16;color:#86efac}
+    .badge-hr{background:#1d4ed8;color:#bfdbfe}
+    .badge-project_lead{background:#065f46;color:#6ee7b7}
+    .badge-quality_lead{background:#92400e;color:#fde68a}
+    .badge-intern{background:#3b0764;color:#e9d5ff}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100}
+    .modal{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+    .modal h3{font-size:18px;margin-bottom:20px}
+    .form-group{margin-bottom:14px}
+    label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px}
+    input,select,textarea{width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:14px;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:#3b82f6}
+    textarea{resize:vertical;min-height:80px}
+    select option{background:#1e293b}
+    .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+    .error-msg{background:#450a0a;border:1px solid #dc2626;color:#fca5a5;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:12px;display:none}
+    .section-title{font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:24px 0 12px}
+    .back-btn{background:none;border:none;color:#3b82f6;font-size:14px;cursor:pointer;margin-bottom:16px;padding:0}
+    .back-btn:hover{text-decoration:underline}
+    .member-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+    .member-item{background:#0f172a;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+    .empty-state{text-align:center;color:#475569;padding:40px;font-size:14px}
+
+    /* TASK TRACKER */
+    .tracker-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;margin-bottom:24px}
+    .tracker-box h3{font-size:16px;margin-bottom:16px;color:#f1f5f9}
+    .active-task-card{background:#0f172a;border:2px solid #3b82f6;border-radius:10px;padding:18px;margin-bottom:16px}
+    .active-task-title{font-size:15px;font-weight:600;margin-bottom:4px}
+    .active-task-meta{font-size:12px;color:#64748b;margin-bottom:12px}
+    .timer{font-size:28px;font-weight:700;color:#3b82f6;font-family:monospace;margin-bottom:12px}
+    .finished-item{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:8px}
+    .finished-item .fi-title{font-weight:500}
+    .finished-item .fi-meta{font-size:11px;color:#64748b;margin-top:2px}
+    .finished-item .fi-time{text-align:right;font-size:12px;color:#4ade80}
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">⚡ TaskFlow</div>
+  <span class="role-badge" id="role-badge">...</span>
+
+  <div class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</div>
+  <div class="nav-item" onclick="showPage('tracker')">⏱ Task Tracker</div>
+  <div class="nav-item" onclick="showPage('projects')">📁 Projects</div>
+
+  <div class="sidebar-bottom">
+    <div class="user-info">
+      <div class="user-name" id="sidebar-name">Loading...</div>
+      <div class="user-email" id="sidebar-email"></div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <h2>Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value blue" id="stat-total">–</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value green" id="stat-done">–</div></div>
+      <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value yellow" id="stat-inprogress">–</div></div>
+      <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value red" id="stat-overdue">–</div></div>
+    </div>
+    <div class="section-title">My Assigned Tasks</div>
+    <div class="task-list" id="my-tasks-list"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <!-- TASK TRACKER -->
+  <div class="page" id="page-tracker">
+    <h2>⏱ Task Tracker</h2>
+
+    <!-- Active Task -->
+    <div class="tracker-box">
+      <h3>Currently Working On</h3>
+      <div id="active-task-display">
+        <div class="empty-state" style="padding:20px">No active task. Start one below.</div>
+      </div>
+    </div>
+
+    <!-- Start Task -->
+    <div class="tracker-box" id="start-task-box">
+      <h3>Start a Task</h3>
+      <div class="form-group">
+        <label>Select Project *</label>
+        <select id="tracker-project" onchange="onTrackerProjectChange()">
+          <option value="">-- Select Project --</option>
+        </select>
+      </div>
+      <div id="tracker-project-code" style="margin-bottom:12px;display:none">
+        <span class="project-code" id="tracker-code-display"></span>
+      </div>
+      <div class="form-group">
+        <label>Task Type</label>
+        <select id="tracker-task-type" onchange="onTrackerTypeChange()">
+          <option value="assigned">Pick from my assigned tasks</option>
+          <option value="custom">Log a custom task</option>
+        </select>
+      </div>
+      <div id="assigned-task-section" class="form-group">
+        <label>Select Task</label>
+        <select id="tracker-task-select">
+          <option value="">-- Select a task --</option>
+        </select>
+      </div>
+      <div id="custom-task-section" class="form-group" style="display:none">
+        <label>Describe what you're working on *</label>
+        <input type="text" id="tracker-custom-title" placeholder="e.g. Fixing login bug on homepage" />
+      </div>
+      <button class="btn btn-primary" onclick="startTask()">▶ Start Task</button>
+      <div class="error-msg" id="err-tracker" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Finished Today -->
+    <div class="tracker-box">
+      <h3>✅ Finished Today</h3>
+      <div id="finished-tasks-list"><div class="empty-state" style="padding:16px">No finished tasks today yet.</div></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div class="page-header">
+      <h2>Projects</h2>
+      <button class="btn btn-primary" id="create-project-btn" onclick="openModal('modal-create-project')" style="display:none">+ New Project</button>
+    </div>
+    <div class="card-grid" id="projects-list"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <!-- PROJECT DETAIL -->
+  <div class="page" id="page-project-detail">
+    <button class="back-btn" onclick="showPage('projects')">← Back to Projects</button>
+    <div class="page-header">
+      <div>
+        <h2 id="detail-project-name">Project</h2>
+        <span class="project-code" id="detail-project-code"></span>
+      </div>
+      <button class="btn btn-primary" id="new-task-btn" onclick="openModal('modal-create-task')">+ New Task</button>
+    </div>
+    <div class="section-title">Members</div>
+    <div class="member-list" id="members-list"></div>
+    <button class="btn btn-outline" id="add-member-btn" onclick="openModal('modal-add-member')" style="margin-bottom:24px">+ Add Member</button>
+    <div class="section-title">Tasks</div>
+    <div class="task-list" id="tasks-list"></div>
+
+    <div id="activity-log-section" style="display:none">
+      <div class="section-title">Activity Log</div>
+      <div id="activity-log-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-create-project">
+  <div class="modal">
+    <h3>Create New Project</h3>
+    <div class="error-msg" id="err-create-project"></div>
+    <div class="form-group"><label>Project Name *</label><input type="text" id="new-project-name" placeholder="e.g. Website Redesign"/></div>
+    <div class="form-group"><label>Project Code * (unique ID, e.g. WEB-01)</label><input type="text" id="new-project-code" placeholder="WEB-01" style="text-transform:uppercase"/></div>
+    <div class="form-group"><label>Description</label><textarea id="new-project-desc" placeholder="What is this project about?"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-create-project')">Cancel</button>
+      <button class="btn btn-primary" onclick="createProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-member">
+  <div class="modal">
+    <h3>Add Member</h3>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px" id="add-member-hint"></p>
+    <div class="error-msg" id="err-add-member"></div>
+    <div class="form-group"><label>Member Email *</label><input type="email" id="member-email" placeholder="member@example.com"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-member')">Cancel</button>
+      <button class="btn btn-primary" onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-create-task">
+  <div class="modal">
+    <h3>Create New Task</h3>
+    <div class="error-msg" id="err-create-task"></div>
+    <div class="form-group"><label>Task Title *</label><input type="text" id="new-task-title" placeholder="e.g. Design homepage"/></div>
+    <div class="form-group"><label>Description</label><textarea id="new-task-desc" placeholder="Task details..."></textarea></div>
+    <div class="form-group"><label>Assign To</label><select id="new-task-assignee"><option value="">Unassigned</option></select></div>
+    <div class="form-group"><label>Priority</label>
+      <select id="new-task-priority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Due Date</label><input type="date" id="new-task-due"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-create-task')">Cancel</button>
+      <button class="btn btn-primary" onclick="createTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-update-task">
+  <div class="modal">
+    <h3>Update Task</h3>
+    <input type="hidden" id="edit-task-id"/>
+    <div class="form-group"><label>Status</label>
+      <select id="edit-task-status">
+        <option value="todo">To Do</option>
+        <option value="in_progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Priority</label>
+      <select id="edit-task-priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-update-task')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateTask()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  let token = localStorage.getItem('token');
+  let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  let currentProjectId = null;
+  let currentProjectMembers = [];
+  let activeLog = null;
+  let timerInterval = null;
+  let myProjects = [];
+
+  if (!token) window.location.href = '/';
+
+  // Set sidebar
+  document.getElementById('sidebar-name').textContent = currentUser.name || 'User';
+  document.getElementById('sidebar-email').textContent = currentUser.email || '';
+  const roleLabels = { hr: 'HR', project_lead: 'Project Lead', quality_lead: 'Quality Lead', intern: 'Intern' };
+  const roleBadgeEl = document.getElementById('role-badge');
+  roleBadgeEl.textContent = roleLabels[currentUser.role] || currentUser.role;
+  roleBadgeEl.className = `role-badge role-${currentUser.role}`;
+
+  // Show/hide HR-only buttons
+  if (currentUser.role === 'hr') {
+    document.getElementById('create-project-btn').style.display = 'inline-block';
+  }
+  if (currentUser.role === 'intern') {
+    document.getElementById('new-task-btn') && (document.getElementById('new-task-btn').style.display = 'none');
+  }
+
+  function logout() { localStorage.clear(); window.location.href = '/'; }
+  function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }; }
+
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    const navMap = { dashboard: 0, tracker: 1, projects: 2 };
+    if (navMap[page] !== undefined) document.querySelectorAll('.nav-item')[navMap[page]].classList.add('active');
+    if (page === 'dashboard') loadDashboard();
+    else if (page === 'projects') loadProjects();
+    else if (page === 'tracker') loadTracker();
+  }
+
+  function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+    const err = document.querySelector('#' + id + ' .error-msg');
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+  }
+  function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
+
+  function statusBadge(status) {
+    const map = { todo: 'badge-todo', in_progress: 'badge-inprogress', done: 'badge-done' };
+    const label = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' };
+    return `<span class="badge ${map[status] || 'badge-todo'}">${label[status] || status}</span>`;
+  }
+  function priorityBadge(p) {
+    return `<span class="badge badge-${p || 'medium'}">${p || 'medium'}</span>`;
+  }
+  function roleBadge(role) {
+    return `<span class="badge badge-${role}">${roleLabels[role] || role}</span>`;
+  }
+  function fmtDateTime(dt) {
+    if (!dt) return '–';
+    return new Date(dt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+  }
+  function fmtDuration(start, end) {
+    const ms = new Date(end) - new Date(start);
+    const m = Math.floor(ms / 60000);
+    const h = Math.floor(m / 60);
+    return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
+  }
+
+  // ── DASHBOARD ──
+  async function loadDashboard() {
+    const res = await fetch(`${API}/api/dashboard`, { headers: authHeaders() });
+    const data = await res.json();
+    document.getElementById('stat-total').textContent = data.total;
+    document.getElementById('stat-done').textContent = data.done;
+    document.getElementById('stat-inprogress').textContent = data.inProgress;
+    document.getElementById('stat-overdue').textContent = data.overdue;
+
+    const list = document.getElementById('my-tasks-list');
+    if (!data.myTasks || !data.myTasks.length) {
+      list.innerHTML = '<div class="empty-state">No tasks assigned to you yet.</div>'; return;
+    }
+    list.innerHTML = data.myTasks.map(t => `
+      <div class="task-item">
+        <div class="task-title">${t.title}<div class="task-meta">${t.project_name}</div></div>
+        ${statusBadge(t.status)} ${priorityBadge(t.priority)}
+        ${t.due_date ? `<span class="task-meta">Due: ${t.due_date}</span>` : ''}
+        <span class="task-meta">${fmtDateTime(t.created_at)}</span>
+      </div>
+    `).join('');
+  }
+
+  // ── TASK TRACKER ──
+  async function loadTracker() {
+    const res = await fetch(`${API}/api/tasks/log/mine`, { headers: authHeaders() });
+    const data = await res.json();
+    activeLog = data.active || null;
+
+    renderActiveTask();
+
+    // Load finished
+    const fin = document.getElementById('finished-tasks-list');
+    if (!data.finished || !data.finished.length) {
+      fin.innerHTML = '<div class="empty-state" style="padding:16px">No finished tasks today.</div>';
+    } else {
+      fin.innerHTML = data.finished.map(l => `
+        <div class="finished-item">
+          <div>
+            <div class="fi-title">${l.task_title || l.custom_task_title || 'Custom Task'}</div>
+            <div class="fi-meta">${l.project_name} · <span class="project-code" style="font-size:10px">${l.project_code}</span></div>
+            <div class="fi-meta">Started: ${fmtDateTime(l.started_at)}</div>
+          </div>
+          <div class="fi-time">
+            ✓ Done<br>
+            ${fmtDateTime(l.finished_at)}<br>
+            <span style="color:#94a3b8">${fmtDuration(l.started_at, l.finished_at)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Load projects for tracker
+    const pres = await fetch(`${API}/api/projects`, { headers: authHeaders() });
+    myProjects = await pres.json();
+    const sel = document.getElementById('tracker-project');
+    sel.innerHTML = '<option value="">-- Select Project --</option>' +
+      myProjects.map(p => `<option value="${p.id}" data-code="${p.project_code}">${p.name}</option>`).join('');
+  }
+
+  function renderActiveTask() {
+    const el = document.getElementById('active-task-display');
+    const startBox = document.getElementById('start-task-box');
+
+    if (!activeLog) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px">No active task. Start one below.</div>';
+      startBox.style.display = 'block';
+      clearInterval(timerInterval);
+      return;
+    }
+
+    startBox.style.display = 'none';
+    const startTime = new Date(activeLog.started_at);
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const h = Math.floor(elapsed / 3600);
+      const m = Math.floor((elapsed % 3600) / 60);
+      const s = elapsed % 60;
+      const tEl = document.getElementById('live-timer');
+      if (tEl) tEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    el.innerHTML = `
+      <div class="active-task-card">
+        <div class="active-task-title">🔵 ${activeLog.task_title || activeLog.custom_task_title || 'Custom Task'}</div>
+        <div class="active-task-meta">
+          ${activeLog.project_name} &nbsp;·&nbsp;
+          <span class="project-code" style="font-size:10px">${activeLog.project_code}</span>
+        </div>
+        <div class="active-task-meta" style="margin-bottom:8px">Started: ${fmtDateTime(activeLog.started_at)}</div>
+        <div class="timer" id="live-timer">00:00:00</div>
+        <button class="btn btn-success" onclick="finishTask(${activeLog.id})">✔ Mark as Finished</button>
+      </div>
+    `;
+
+    clearInterval(timerInterval);
+    updateTimer();
+    timerInterval = setInterval(updateTimer, 1000);
+  }
+
+  function onTrackerProjectChange() {
+    const sel = document.getElementById('tracker-project');
+    const opt = sel.options[sel.selectedIndex];
+    const code = opt.dataset.code || '';
+    const projectId = sel.value;
+    const codeBox = document.getElementById('tracker-project-code');
+    const codeDisplay = document.getElementById('tracker-code-display');
+
+    if (projectId) {
+      codeDisplay.textContent = code;
+      codeBox.style.display = 'block';
+      loadAssignedTasksForTracker(projectId);
+    } else {
+      codeBox.style.display = 'none';
+    }
+  }
+
+  async function loadAssignedTasksForTracker(projectId) {
+    const res = await fetch(`${API}/api/tasks/project/${projectId}`, { headers: authHeaders() });
+    const tasks = await res.json();
+    const myTasks = tasks.filter(t => t.assignee_id == currentUser.id && t.status !== 'done');
+    const sel = document.getElementById('tracker-task-select');
+    sel.innerHTML = '<option value="">-- Select a task --</option>' +
+      myTasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+  }
+
+  function onTrackerTypeChange() {
+    const type = document.getElementById('tracker-task-type').value;
+    document.getElementById('assigned-task-section').style.display = type === 'assigned' ? 'block' : 'none';
+    document.getElementById('custom-task-section').style.display = type === 'custom' ? 'block' : 'none';
+  }
+
+  async function startTask() {
+    const project_id = document.getElementById('tracker-project').value;
+    const type = document.getElementById('tracker-task-type').value;
+    const task_id = type === 'assigned' ? document.getElementById('tracker-task-select').value : null;
+    const custom_task_title = type === 'custom' ? document.getElementById('tracker-custom-title').value.trim() : null;
+
+    if (!project_id) return showError('err-tracker', 'Please select a project');
+    if (type === 'custom' && !custom_task_title) return showError('err-tracker', 'Please describe what you are working on');
+
+    const body = { project_id: parseInt(project_id) };
+    if (task_id) body.task_id = parseInt(task_id);
+    if (custom_task_title) body.custom_task_title = custom_task_title;
+
+    const res = await fetch(`${API}/api/tasks/log/start`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) return showError('err-tracker', data.error);
+
+    loadTracker();
+  }
+
+  async function finishTask(logId) {
+    await fetch(`${API}/api/tasks/log/finish/${logId}`, { method: 'POST', headers: authHeaders() });
+    activeLog = null;
+    clearInterval(timerInterval);
+    loadTracker();
+    loadDashboard();
+  }
+
+  // ── PROJECTS ──
+  async function loadProjects() {
+    const res = await fetch(`${API}/api/projects`, { headers: authHeaders() });
+    const projects = await res.json();
+    const list = document.getElementById('projects-list');
+    if (!projects.length) {
+      list.innerHTML = `<div class="empty-state">${currentUser.role === 'hr' ? 'No projects yet. Create your first one!' : 'You have not been added to any project yet.'}</div>`;
+      return;
+    }
+    list.innerHTML = projects.map(p => `
+      <div class="card">
+        <div class="project-code">${p.project_code}</div>
+        <h3>${p.name}</h3>
+        <p>${p.description || 'No description'}</p>
+        <div class="card-actions">
+          <button class="btn btn-primary" onclick="openProject(${p.id}, '${p.name}', '${p.project_code}')">Open</button>
+          ${currentUser.role === 'hr' ? `<button class="btn btn-danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function createProject() {
+    const name = document.getElementById('new-project-name').value.trim();
+    const project_code = document.getElementById('new-project-code').value.trim().toUpperCase();
+    const description = document.getElementById('new-project-desc').value.trim();
+    if (!name || !project_code) return showError('err-create-project', 'Project name and code are required');
+
+    const res = await fetch(`${API}/api/projects`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ name, project_code, description })
+    });
+    const data = await res.json();
+    if (!res.ok) return showError('err-create-project', data.error);
+
+    closeModal('modal-create-project');
+    document.getElementById('new-project-name').value = '';
+    document.getElementById('new-project-code').value = '';
+    document.getElementById('new-project-desc').value = '';
+    loadProjects();
+  }
+
+  async function deleteProject(id) {
+    if (!confirm('Delete this project and all its tasks?')) return;
+    await fetch(`${API}/api/projects/${id}`, { method: 'DELETE', headers: authHeaders() });
+    loadProjects();
+  }
+
+  // ── PROJECT DETAIL ──
+  async function openProject(id, name, code) {
+    currentProjectId = id;
+    document.getElementById('detail-project-name').textContent = name;
+    document.getElementById('detail-project-code').textContent = code;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-project-detail').classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+    // Hide add/create for intern
+    document.getElementById('new-task-btn').style.display = currentUser.role === 'intern' ? 'none' : 'inline-block';
+    document.getElementById('add-member-btn').style.display = currentUser.role === 'intern' ? 'none' : 'inline-block';
+
+    // Set add member hint
+    const hints = { hr: 'You can add: Project Leads, Quality Leads, Interns', project_lead: 'You can add: Quality Leads, Interns', quality_lead: 'You can add: Interns' };
+    document.getElementById('add-member-hint').textContent = hints[currentUser.role] || '';
+
+    const res = await fetch(`${API}/api/projects/${id}`, { headers: authHeaders() });
+    const data = await res.json();
+    currentProjectMembers = data.members || [];
+
+    document.getElementById('members-list').innerHTML = currentProjectMembers.map(m => `
+      <div class="member-item">
+        <span>${m.name} <span style="color:#64748b;font-size:12px">${m.email}</span></span>
+        ${roleBadge(m.role)}
+      </div>
+    `).join('') || '<div class="empty-state" style="padding:12px">No members visible to you.</div>';
+
+    // Populate assignee dropdown
+    const assigneeSelect = document.getElementById('new-task-assignee');
+    assigneeSelect.innerHTML = '<option value="">Unassigned</option>' +
+      currentProjectMembers.map(m => `<option value="${m.id}">${m.name} (${roleLabels[m.role]})</option>`).join('');
+
+    loadTasks();
+
+    // Show activity log for managers
+    if (currentUser.role !== 'intern') {
+      document.getElementById('activity-log-section').style.display = 'block';
+      loadActivityLog(id);
+    }
+  }
+
+  async function loadTasks() {
+    const res = await fetch(`${API}/api/tasks/project/${currentProjectId}`, { headers: authHeaders() });
+    const tasks = await res.json();
+    const list = document.getElementById('tasks-list');
+
+    if (!tasks.length) {
+      list.innerHTML = '<div class="empty-state">No tasks yet.</div>'; return;
+    }
+
+    list.innerHTML = tasks.map(t => `
+      <div class="task-item">
+        <div class="task-title">
+          ${t.title}
+          ${t.assignee_name ? `<div class="task-meta">→ ${t.assignee_name} ${t.assignee_role ? roleBadge(t.assignee_role) : ''}</div>` : ''}
+          <div class="task-meta">Created: ${fmtDateTime(t.created_at)}</div>
+        </div>
+        ${statusBadge(t.status)} ${priorityBadge(t.priority)}
+        ${t.due_date ? `<span class="task-meta">Due: ${t.due_date}</span>` : ''}
+        ${currentUser.role !== 'intern' ? `<button class="btn btn-outline" onclick="openUpdateTask(${t.id},'${t.status}','${t.priority}')">Edit</button>` : ''}
+        ${currentUser.role === 'hr' || currentUser.role === 'project_lead' ? `<button class="btn btn-danger" onclick="deleteTask(${t.id})">Del</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  async function loadActivityLog(projectId) {
+    const res = await fetch(`${API}/api/tasks/log/project/${projectId}`, { headers: authHeaders() });
+    const logs = await res.json();
+    const list = document.getElementById('activity-log-list');
+
+    if (!logs.length) {
+      list.innerHTML = '<div class="empty-state">No activity yet.</div>'; return;
+    }
+
+    list.innerHTML = logs.map(l => `
+      <div class="finished-item">
+        <div>
+          <div class="fi-title">${l.task_title || l.custom_task_title || 'Custom Task'}</div>
+          <div class="fi-meta">${l.user_name} ${roleBadge(l.user_role)} · Started: ${fmtDateTime(l.started_at)}</div>
+        </div>
+        <div class="fi-time">
+          ${l.status === 'finished'
+            ? `✓ ${fmtDateTime(l.finished_at)}<br><span style="color:#94a3b8">${fmtDuration(l.started_at, l.finished_at)}</span>`
+            : '<span style="color:#fb923c">🔵 In Progress</span>'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function createTask() {
+    const title = document.getElementById('new-task-title').value.trim();
+    const description = document.getElementById('new-task-desc').value.trim();
+    const assignee_id = document.getElementById('new-task-assignee').value || null;
+    const priority = document.getElementById('new-task-priority').value;
+    const due_date = document.getElementById('new-task-due').value || null;
+    if (!title) return showError('err-create-task', 'Task title is required');
+
+    const res = await fetch(`${API}/api/tasks/project/${currentProjectId}`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ title, description, assignee_id, priority, due_date })
+    });
+    const data = await res.json();
+    if (!res.ok) return showError('err-create-task', data.error);
+
+    closeModal('modal-create-task');
+    document.getElementById('new-task-title').value = '';
+    loadTasks();
+  }
+
+  function openUpdateTask(id, status, priority) {
+    document.getElementById('edit-task-id').value = id;
+    document.getElementById('edit-task-status').value = status;
+    document.getElementById('edit-task-priority').value = priority;
+    openModal('modal-update-task');
+  }
+
+  async function updateTask() {
+    const id = document.getElementById('edit-task-id').value;
+    const status = document.getElementById('edit-task-status').value;
+    const priority = document.getElementById('edit-task-priority').value;
+    await fetch(`${API}/api/tasks/${id}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify({ status, priority })
+    });
+    closeModal('modal-update-task');
+    loadTasks();
+  }
+
+  async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    await fetch(`${API}/api/tasks/${id}`, { method: 'DELETE', headers: authHeaders() });
+    loadTasks();
+  }
+
+  async function addMember() {
+    const email = document.getElementById('member-email').value.trim();
+    if (!email) return showError('err-add-member', 'Email is required');
+
+    const res = await fetch(`${API}/api/projects/${currentProjectId}/members`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) return showError('err-add-member', data.error);
+
+    closeModal('modal-add-member');
+    document.getElementById('member-email').value = '';
+    openProject(currentProjectId,
+      document.getElementById('detail-project-name').textContent,
+      document.getElementById('detail-project-code').textContent);
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
