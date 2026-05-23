@@ -232,6 +232,45 @@ To test the full hierarchy, create 4 accounts and add them to the same project w
 
 ---
 
+## 🐛 Known Issues
+
+These are bugs we are aware of but have not fixed yet. If you are interested, feel free to contribute!
+
+### 1. Dashboard Task Counter Does Not Update in Real Time
+When a task is marked as finished via the Task Tracker, the stat counters on the Dashboard (Total, Completed, In Progress) do not automatically refresh. The user has to manually navigate away and come back to the Dashboard to see the updated counts.
+
+**Root cause:** The `loadDashboard()` function is only called on page load and after updating a task from the task list — it is not triggered when a task log is finished from the Tracker page.
+
+**Possible fix:** Call `loadDashboard()` inside the `finishTask()` function in `dashboard.html`, or implement a polling mechanism that refreshes stats every few seconds.
+
+---
+
+### 2. Task Start Time Displayed in UTC Instead of Indian Time (IST)
+When a task is started via the Task Tracker, the "Started at" timestamp shown on the UI displays the time in UTC (US/international time) instead of IST (Indian Standard Time, UTC+5:30). This can cause confusion for Indian users.
+
+**Root cause:** The timestamps are stored in the SQLite database using `datetime('now')` which saves in UTC. The frontend formats them using `new Date(dt).toLocaleString()` without explicitly specifying the timezone.
+
+**Possible fix:** Either store timestamps with timezone info, or explicitly pass the locale and timezone when formatting on the frontend:
+```javascript
+new Date(dt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })
+```
+
+---
+
+## 🤝 Contributing
+
+This project is open for contributions! If any of the known issues above interest you, or if you spot something else that could be improved, you are welcome to jump in.
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b fix/your-fix-name`)
+3. Make your changes
+4. Commit and push (`git commit -m "fix: describe what you fixed"`)
+5. Open a Pull Request with a clear description of what you changed and why
+
+No contribution is too small — bug fixes, UI improvements, better error messages, or even improving this README are all welcome.
+
+---
+
 ## 📝 License
 
 This project was built as an assignment submission. Feel free to use it as a reference.
